@@ -1,0 +1,87 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Path::Class;
+
+my @h = split m/\n/, <<_END_;
+src/md5.h
+src/sphinxexcerpt.h
+src/sphinxexpr.h
+src/sphinx.h
+src/sphinxquery.h
+src/sphinxstd.h
+src/sphinxstem.h
+src/sphinxtimers.h
+src/sphinxutils.h
+src/sphinxversion.h
+_END_
+
+my @cpp = map { "src/$_" } split m/\s+/, <<_END_;
+sphinx.cpp sphinxexcerpt.cpp sphinxquery.cpp
+sphinxsoundex.cpp sphinxmetaphone.cpp sphinxstemen.cpp
+sphinxutils.cpp md5.cpp sphinxstd.cpp sphinxsort.cpp sphinxexpr.cpp
+_END_
+
+
+#src/indexer.cpp
+#src/md5.cpp
+#src/search.cpp
+#src/searchd.cpp
+#src/spelldump.cpp
+#src/sphinx.cpp
+#src/sphinxexcerpt.cpp
+#src/sphinxexpr.cpp
+#src/sphinxexpryy.cpp
+#src/sphinxmetaphone.cpp
+#src/sphinxquery.cpp
+#src/sphinxsort.cpp
+#src/sphinxsoundex.cpp
+#src/sphinxstd.cpp
+#src/sphinxstemen.cpp
+#src/sphinxstemru.cpp
+#src/sphinxutils.cpp
+#src/tests.cpp
+#_END_
+
+my %seen;
+
+sub include;
+sub include {
+    my $file = shift;
+    my @content = $file->slurp;
+
+    for my $line (@content) {
+        if ($line =~ m/^\s*#include "([^"]+)"\s*$/) {
+            my $h = $1;
+            unless ($h =~ m/stemmer|expat|iconv/ or $seen{$h}) {
+                $seen{$h} = 1;
+                include file 'src', $h;
+            }
+            next unless $h =~ m/expat|iconv/;
+        }
+        print $line;
+    }
+}
+
+for (@cpp) {
+    my $cpp = file $_;
+    include $cpp;
+#    my @content = $cpp->slurp;
+
+#    for my $line (@content) {
+#        if ($line =~ m/^\s*#include "([^"]+)"\s*$/) {
+#            my $h = $1;
+#            unless ($h =~ m/stemmer|expat|iconv/ or $seen{$h}) {
+#                my $h = file 'src', $h;
+#                print scalar $h->slurp;
+#            }
+#            $seen{$h} += 1;
+#            next unless $h =~ m/expat|iconv/;
+#        }
+#        print $line;
+#    }
+}
+
+1;
